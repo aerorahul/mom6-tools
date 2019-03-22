@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+import os, sys, socket, shutil
 import datetime as dt
 import numpy as np
-import os
-import socket
-import shutil
 import xarray as xr
 import pandas as pd
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 
 def getMERRA2stream(cdate):
@@ -46,9 +44,7 @@ def timeAverage(da_in, freq):
     ind_lat = level_names.index('lat')
     ind_lon = level_names.index('lon')
 
-    freqH = '{}H'.format(freq)
-
-    df_avg = df.groupby([pd.Grouper(freq=freqH, level=ind_time)] +
+    df_avg = df.groupby([pd.Grouper(freq=str(freq)+'H', level=ind_time)] +
                         [level_values(i) for i in [ind_lat, ind_lon]]).mean()
 
     da_out = df_avg.to_xarray()
@@ -73,7 +69,7 @@ def readMERRA2(fname, varname):
 def check_path_exists(fname):
 
     if not os.path.exists(fname):
-        raise FileNotFoundError('{0} does not exist!'.format(fname))
+        raise FileNotFoundError(fname+' does not exist!')
 
     return
 
@@ -103,28 +99,27 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    cdatestr = args.date
-    cdate = dt.datetime.strptime(cdatestr, '%Y%m%d').date()
+    cdate = dt.datetime.strptime(args.date, '%Y%m%d').date()
     outdir = os.path.realpath(args.outdir)
     tavg_rad = args.tavg_rad
     tavg_met = args.tavg_met
     tavg_pcp = args.tavg_pcp
     dir_MERRA2 = args.MERRA2dir
 
-    outdir = outdir + '/{0:.4}/{0}'.format(cdatestr)
+    outdir = outdir+'/{:Y%Y/M%m}'.format(cdate)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
     stream = getMERRA2stream(cdate)
 
-    pth = '{}/data/products/{}/{:Y%Y/M%m}'.format(dir_MERRA2, stream, cdate)
+    pth = dir_MERRA2+'/data/products/'+stream+'/{:Y%Y/M%m}'.format(cdate)
     check_path_exists(pth)
 
-    rad = '{}/{}.tavg1_2d_rad_Nx.{:%Y%m%d}.nc4'.format(pth, stream, cdate)
+    rad = pth+'/'+stream+'.tavg1_2d_rad_Nx.{:%Y%m%d}.nc4'.format(cdate)
     check_path_exists(rad)
-    asm = '{}/{}.inst1_2d_asm_Nx.{:%Y%m%d}.nc4'.format(pth, stream, cdate)
+    asm = pth+'/'+stream+'.inst1_2d_asm_Nx.{:%Y%m%d}.nc4'.format(cdate)
     check_path_exists(asm)
-    flx = '{}/{}.tavg1_2d_flx_Nx.{:%Y%m%d}.nc4'.format(pth, stream, cdate)
+    flx = pth+'/'+stream+'.tavg1_2d_flx_Nx.{:%Y%m%d}.nc4'.format(cdate)
     check_path_exists(flx)
 
     # Read MERRA2
@@ -150,10 +145,14 @@ if __name__ == "__main__":
     tavg_prectot = timeAverage(prectot, tavg_pcp)
 
     # Write to netCDF
-    tavg_swgnt.to_netcdf(path=outdir+'/'+'SWGNT.nc4', mode='w')
-    tavg_lwgnt.to_netcdf(path=outdir+'/'+'LWGNT.nc4', mode='w')
-    tavg_u10m.to_netcdf(path=outdir+'/'+'U10M.nc4', mode='w')
-    tavg_v10m.to_netcdf(path=outdir+'/'+'V10M.nc4', mode='w')
-    tavg_t2m.to_netcdf(path=outdir+'/'+'T2M.nc4', mode='w')
-    tavg_qv10m.to_netcdf(path=outdir+'/'+'QV10M.nc4', mode='w')
-    tavg_prectot.to_netcdf(path=outdir+'/'+'PRECTOT.nc4', mode='w')
+    tavg_swgnt.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'SWGNT.nc4', mode='w')
+    tavg_lwgnt.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'LWGNT.nc4', mode='w')
+
+    tavg_u10m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'U10M.nc4', mode='w')
+    tavg_v10m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'V10M.nc4', mode='w')
+    tavg_t2m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'T2M.nc4', mode='w')
+    tavg_qv10m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'QV10M.nc4', mode='w')
+
+    tavg_prectot.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'PRECTOT.nc4', mode='w')
+
+    sys.exit(0)
