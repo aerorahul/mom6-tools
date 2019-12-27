@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, socket, shutil
+import os, sys, socket
 import datetime as dt
 import numpy as np
 import xarray as xr
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     description = "Fetch and create MERRA2 Forcings for MOM6"
     outdir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) +
-                             '/../DATA/fluxes/merra2')
+                             '/fluxes/merra2')
 
     parser = ArgumentParser(description=description,
                             formatter_class=ArgumentDefaultsHelpFormatter)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     tavg_pcp = args.tavg_pcp
     dir_MERRA2 = args.MERRA2dir
 
-    outdir = outdir+'/{:Y%Y/M%m}'.format(cdate)
+    outdir = outdir+'/{:%Y/%Y%m%d}'.format(cdate)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
@@ -116,20 +116,22 @@ if __name__ == "__main__":
     check_path_exists(pth)
 
     rad = pth+'/'+stream+'.tavg1_2d_rad_Nx.{:%Y%m%d}.nc4'.format(cdate)
-    check_path_exists(rad)
     asm = pth+'/'+stream+'.inst1_2d_asm_Nx.{:%Y%m%d}.nc4'.format(cdate)
-    check_path_exists(asm)
     flx = pth+'/'+stream+'.tavg1_2d_flx_Nx.{:%Y%m%d}.nc4'.format(cdate)
+
+    check_path_exists(rad)
+    check_path_exists(asm)
     check_path_exists(flx)
 
     # Read MERRA2
     swgnt = readMERRA2(rad, 'SWGNT')
     lwgnt = readMERRA2(rad, 'LWGNT')
 
+    slp = readMERRA2(asm, 'SLP')
     u10m = readMERRA2(asm, 'U10M')
     v10m = readMERRA2(asm, 'V10M')
     t2m = readMERRA2(asm, 'T2M')
-    qv10m = readMERRA2(asm, 'QV10M')
+    qv2m = readMERRA2(asm, 'QV2M')
 
     prectot = readMERRA2(flx, 'PRECTOT')
 
@@ -137,22 +139,26 @@ if __name__ == "__main__":
     tavg_swgnt = timeAverage(swgnt, tavg_rad)
     tavg_lwgnt = timeAverage(lwgnt, tavg_rad)
 
+    tavg_slp = timeAverage(slp, tavg_met)
     tavg_u10m = timeAverage(u10m, tavg_met)
     tavg_v10m = timeAverage(v10m, tavg_met)
     tavg_t2m = timeAverage(t2m, tavg_met)
-    tavg_qv10m = timeAverage(qv10m, tavg_met)
+    tavg_qv2m = timeAverage(qv2m, tavg_met)
 
     tavg_prectot = timeAverage(prectot, tavg_pcp)
 
     # Write to netCDF
-    tavg_swgnt.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'SWGNT.nc4', mode='w')
-    tavg_lwgnt.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'LWGNT.nc4', mode='w')
+    fstr = outdir+'/merra2.{:%Y%m%d}.'.format(cdate)
 
-    tavg_u10m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'U10M.nc4', mode='w')
-    tavg_v10m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'V10M.nc4', mode='w')
-    tavg_t2m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'T2M.nc4', mode='w')
-    tavg_qv10m.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'QV10M.nc4', mode='w')
+    tavg_swgnt.to_netcdf(path=fstr+'SWGNT.nc4', mode='w')
+    tavg_lwgnt.to_netcdf(path=fstr+'LWGNT.nc4', mode='w')
 
-    tavg_prectot.to_netcdf(path=outdir+'/{:%Y%m%d}.'.format(cdate)+'PRECTOT.nc4', mode='w')
+    tavg_slp.to_netcdf(path=fstr+'SLP.nc4', mode='w')
+    tavg_u10m.to_netcdf(path=fstr+'U10M.nc4', mode='w')
+    tavg_v10m.to_netcdf(path=fstr+'V10M.nc4', mode='w')
+    tavg_t2m.to_netcdf(path=fstr+'T2M.nc4', mode='w')
+    tavg_qv2m.to_netcdf(path=fstr+'QV2M.nc4', mode='w')
+
+    tavg_prectot.to_netcdf(path=fstr+'PRECTOT.nc4', mode='w')
 
     sys.exit(0)
