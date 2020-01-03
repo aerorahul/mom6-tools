@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, socket
+import multiprocessing
 from datetime import datetime, timedelta
 import numpy as np
 import xarray as xr
@@ -53,15 +54,22 @@ def timeAverage(da_in, freq):
     da_out.lon.attrs = da_in.lon.attrs
     da_out.time.attrs = da_in.time.attrs
     da_out['time'] = da_out.time.get_index('time') + timedelta(hours=freq/2)
+    da_out.time.encoding['dtype'] = "double"
     da_out.time.encoding['units'] = "seconds since 1970-01-01 00:00:00"
     da_out.time.encoding['calendar'] = "standard"
     timeAttrs = ["long_name", "units", "calendar"]
     da_out.time.attrs = {key:val for key, val in da_out.time.attrs.items() if key in timeAttrs}
     da_out[da_in.name].attrs = da_in.attrs
+
+    da_out.encoding['unlimited_dims'] = ['time']
+
     return da_out
 
 
 def readMERRA2(fname, varname):
+
+    if not os.path.exists(fname):
+        raise FileNotFoundError(fname+' does not exist!')
 
     DS = xr.open_dataset(fname)
     da = DS.get(varname)
@@ -69,11 +77,12 @@ def readMERRA2(fname, varname):
 
     return da
 
+def _threadedForc(args):
 
-def check_path_exists(fname):
+    fileName, varName, tAvg, outFileName = args
 
-    if not os.path.exists(fname):
-        raise FileNotFoundError(fname+' does not exist!')
+    forc = timeAverage(readMERRA2(fileName, varName), tAvg)
+    forc.to_netcdf(path=outFileName, mode='w')
 
     return
 
@@ -82,10 +91,10 @@ if __name__ == "__main__":
 
     host = socket.gethostname()
     if host.startswith('discover'):
-        dir_MERRA2 = "/discover/nobackup/projects/gmao/merra2"
+        dirMERRA2 = "/discover/nobackup/projects/gmao/merra2"
         lMERRA2 = False
     else:
-        dir_MERRA2 = None
+        dirMERRA2 = None
         lMERRA2 = True
 
     description = "Fetch and create MERRA2 Forcings for MOM6"
@@ -95,74 +104,57 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=description,
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('--date', help='date to create MERRA2 forcings for MOM6', metavar='YYYYMMDD', type=str, required=True)
-    parser.add_argument('--outdir', help='directory to save final forcings to', type=str, default=outdir, required=False)
-    parser.add_argument('--tavg_rad', help='time-averaging frequency for Radiation forcings (hours)', type=int, default=24, required=False)
-    parser.add_argument('--tavg_met', help='time-averaging frequency for Meteorological forcings (hours)', type=int, default=6, required=False)
-    parser.add_argument('--MERRA2dir', help='directory containing MERRA2 dataset', type=str, required=lMERRA2, default=dir_MERRA2)
-    parser.add_argument('--tavg_pcp', help='time-averaging frequency for Precipitation forcings (hours)', type=int, default=24, required=False)
+    parser.add_argument('--outdir', help='directory to save final forcings to (Default: %(default)s)', type=str, default=outdir, required=False)
+    parser.add_argument('--MERRA2dir', help='directory containing MERRA2 dataset (Default: %(default)s)', type=str, required=lMERRA2, default=dirMERRA2)
+    parser.add_argument('--tavg_rad', help='time-averaging frequency for Radiation forcings (Default: %(default)s hours)', type=int, default=24, required=False)
+    parser.add_argument('--tavg_met', help='time-averaging frequency for Meteorological forcings (Default: %(default)s hours)', type=int, default=6, required=False)
+    parser.add_argument('--tavg_pcp', help='time-averaging frequency for Precipitation forcings (Default: %(default)s hours)', type=int, default=24, required=False)
+    parser.add_argument("--threads", default=multiprocessing.cpu_count(), type=int, help="number of threads to use (Default: %(default)s)")
 
     args = parser.parse_args()
 
     cdate = datetime.strptime(args.date, '%Y%m%d').date()
     outdir = os.path.realpath(args.outdir)
-    tavg_rad = args.tavg_rad
-    tavg_met = args.tavg_met
-    tavg_pcp = args.tavg_pcp
-    dir_MERRA2 = args.MERRA2dir
+    tAvgRad = args.tavg_rad
+    tAvgMet = args.tavg_met
+    tAvgPcp = args.tavg_pcp
+    dirMERRA2 = args.MERRA2dir
+    threads = args.threads if args.threads <= 8 else 8 # Use 8 threads only, if more available
 
-    outdir = outdir+'/{:%Y/%Y%m%d}'.format(cdate)
+    outdir = os.path.join(outdir, '{:%Y/%Y%m%d}'.format(cdate))
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
     stream = getMERRA2stream(cdate)
 
-    pth = dir_MERRA2+'/data/products/'+stream+'/{:Y%Y/M%m}'.format(cdate)
-    check_path_exists(pth)
+    pth = os.path.join(dirMERRA2, 'data/products', stream, '{:Y%Y/M%m}'.format(cdate))
 
-    rad = pth+'/'+stream+'.tavg1_2d_rad_Nx.{:%Y%m%d}.nc4'.format(cdate)
-    asm = pth+'/'+stream+'.inst1_2d_asm_Nx.{:%Y%m%d}.nc4'.format(cdate)
-    flx = pth+'/'+stream+'.tavg1_2d_flx_Nx.{:%Y%m%d}.nc4'.format(cdate)
+    rad = os.path.join(pth, stream+'.tavg1_2d_rad_Nx.{:%Y%m%d}.nc4'.format(cdate))
+    asm = os.path.join(pth, stream+'.inst1_2d_asm_Nx.{:%Y%m%d}.nc4'.format(cdate))
+    flx = os.path.join(pth, stream+'.tavg1_2d_flx_Nx.{:%Y%m%d}.nc4'.format(cdate))
 
-    check_path_exists(rad)
-    check_path_exists(asm)
-    check_path_exists(flx)
+    # MERRA2 variables to create forcings from and their attributes
+    merra2Dict = {
+        "SWGNT"   : {'readFrom': rad, 'tAvg': tAvgRad},
+        "LWGNT"   : {'readFrom': rad, 'tAvg': tAvgRad},
+        "SLP"     : {'readFrom': asm, 'tAvg': tAvgMet},
+        "U10M"    : {'readFrom': asm, 'tAvg': tAvgMet},
+        "V10M"    : {'readFrom': asm, 'tAvg': tAvgMet},
+        "T2M"     : {'readFrom': asm, 'tAvg': tAvgMet},
+        "QV2M"    : {'readFrom': asm, 'tAvg': tAvgMet},
+        "PRECTOT" : {'readFrom': flx, 'tAvg': tAvgPcp}
+    }
 
-    # Read MERRA2
-    swgnt = readMERRA2(rad, 'SWGNT')
-    lwgnt = readMERRA2(rad, 'LWGNT')
+    # Prepare to thread the forcing maker
+    paramIn = []
+    for varName, varDict in merra2Dict.items():
+        fileName = varDict['readFrom']
+        tAvg = varDict['tAvg']
+        outFileName = os.path.join(outdir, 'merra2.{:%Y%m%d}.{}.nc4'.format(cdate, varName))
+        paramIn.append((fileName, varName, tAvg, outFileName))
 
-    slp = readMERRA2(asm, 'SLP')
-    u10m = readMERRA2(asm, 'U10M')
-    v10m = readMERRA2(asm, 'V10M')
-    t2m = readMERRA2(asm, 'T2M')
-    qv2m = readMERRA2(asm, 'QV2M')
-
-    prectot = readMERRA2(flx, 'PRECTOT')
-
-    # Do time-averaging
-    tavg_swgnt = timeAverage(swgnt, tavg_rad)
-    tavg_lwgnt = timeAverage(lwgnt, tavg_rad)
-
-    tavg_slp = timeAverage(slp, tavg_met)
-    tavg_u10m = timeAverage(u10m, tavg_met)
-    tavg_v10m = timeAverage(v10m, tavg_met)
-    tavg_t2m = timeAverage(t2m, tavg_met)
-    tavg_qv2m = timeAverage(qv2m, tavg_met)
-
-    tavg_prectot = timeAverage(prectot, tavg_pcp)
-
-    # Write to netCDF
-    fstr = outdir+'/merra2.{:%Y%m%d}.'.format(cdate)
-
-    tavg_swgnt.to_netcdf(path=fstr+'SWGNT.nc4', mode='w', unlimited_dims=['time'])
-    tavg_lwgnt.to_netcdf(path=fstr+'LWGNT.nc4', mode='w', unlimited_dims=['time'])
-
-    tavg_slp.to_netcdf(path=fstr+'SLP.nc4', mode='w', unlimited_dims=['time'])
-    tavg_u10m.to_netcdf(path=fstr+'U10M.nc4', mode='w', unlimited_dims=['time'])
-    tavg_v10m.to_netcdf(path=fstr+'V10M.nc4', mode='w', unlimited_dims=['time'])
-    tavg_t2m.to_netcdf(path=fstr+'T2M.nc4', mode='w', unlimited_dims=['time'])
-    tavg_qv2m.to_netcdf(path=fstr+'QV2M.nc4', mode='w', unlimited_dims=['time'])
-
-    tavg_prectot.to_netcdf(path=fstr+'PRECTOT.nc4', mode='w', unlimited_dims=['time'])
+    # Thread the forcing maker
+    pool = multiprocessing.Pool(threads)
+    pool.map(_threadedForc, paramIn)
 
     sys.exit(0)
