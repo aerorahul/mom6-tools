@@ -15,3 +15,10 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+
+# Figures in any format
+*.png
+*.jp*g
+*.eps
+*.pdf
+*.tiff
