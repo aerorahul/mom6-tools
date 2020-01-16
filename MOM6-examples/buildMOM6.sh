@@ -33,7 +33,7 @@ function fms() {
     [[ $? -ne 0 ]] && abort "FMS"
 
     cd $cwd/build/$compiler/shared/repro;
-    make NETCDF=3 REPRO=1 libfms.a -j;
+    make NETCDF=3 REPRO=1 INCLUDES=-I$NETCDF_INCLUDE_DIRS libfms.a -j;
     [[ $? -ne 0 ]] && abort "FMS"
 
 }
@@ -67,7 +67,7 @@ function ocean_only() {
     [[ $? -ne 0 ]] && abort "MOM6"
 
     cd $cwd/build/$compiler/ocean_only/repro;
-    make NETCDF=3 REPRO=1 MOM6 -j;
+    make NETCDF=3 REPRO=1 INCLUDES=-I$NETCDF_INCLUDE_DIRS MOM6 -j;
     [[ $? -ne 0 ]] && abort "MOM6"
 
 }
@@ -88,11 +88,11 @@ function ocean_sis2() {
     cd $cwd/build/$compiler/ocean_sis2/repro;
     ../../../../src/mkmf/bin/list_paths \
     -l ./ ../../../../src/MOM6/config_src/{dynamic,coupled_driver} \
-       ../../../../src/MOM6/src/{*,*/*}/ ../../../../src/{atmos_null,coupler,land_null,ice_ocean_extras,icebergs,SIS2,FMS/coupler,FMS/include}/;
+       ../../../../src/MOM6/src/{*,*/*}/ ../../../../src/{atmos_null,coupler,land_null,ice_param,icebergs,SIS2,FMS/coupler,FMS/include}/;
     [[ $? -ne 0 ]] && abort "MOM6+SIS2"
 
     cd $cwd/build/$compiler/ocean_sis2/repro;
-    /../../../src/mkmf/bin/mkmf \
+    ../../../../src/mkmf/bin/mkmf \
     -t ../../../../src/mkmf/templates/$template \
     -o "-I../../shared/repro" \
     -p MOM6 \
@@ -102,17 +102,7 @@ function ocean_sis2() {
     [[ $? -ne 0 ]] && abort "MOM6+SIS2"
 
     cd $cwd/build/$compiler/ocean_sis2/repro;
-    ../../../../src/mkmf/bin/mkmf \
-    -t ../../../../src/mkmf/templates/$template \
-    -o "-I../../shared/repro" \
-    -p MOM6 \
-    -l "-L../../shared/repro -lfms" \
-    -c "$FMS_CPPDEFS" \
-    path_names;
-    [[ $? -ne 0 ]] && abort "MOM6+SIS2"
-
-    cd $cwd/build/$compiler/ocean_sis2/repro;
-    make NETCDF=3 REPRO=1 MOM6 -j;
+    make NETCDF=3 REPRO=1 INCLUDES=-I$NETCDF_INCLUDE_DIRS MOM6 -j;
     [[ $? -ne 0 ]] && abort "MOM6+SIS2"
 
 }
