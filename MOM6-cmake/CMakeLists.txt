@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(
-  mom6-package
+  mom6-cmake
   VERSION 2020.07.01
   LANGUAGES C Fortran)
 
