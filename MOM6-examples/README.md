@@ -1,7 +1,7 @@
 # MOM6-examples
 
 - `buildMOM6Ex.sh` build's `MOM6` executable in `ocean_only` or `ocean_sis2` mode using the procedure outlined in MOM6-Examples.
-- `buildMOM6cmake.sh` build's `MOM6` library and executable in `ocean_only` and optionally `ocean_sis2` mode using `cmake`.
+- `buildMOM6cmake.sh` ``build's `MOM6` library and executable in `ocean_only` and optionally `ocean_sis2` mode using `cmake` -- **`DEPRECATED`**.  See `MOM6-cmake/README.md`.
 - To run the tests, soft-link `MOM6-testing` as `.datasets` in `INPUT` directory for the specific
 example.
 
