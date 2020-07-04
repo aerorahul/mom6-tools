@@ -2,8 +2,8 @@
 
 set -e
 
-NTHREADS=8
-VERBOSE=OFF
+NTHREADS=12
+VERBOSE=0
 
 topDir=$(pwd)
 
@@ -26,12 +26,10 @@ git clone https://github.com/teos-10/gsw-fortran
 echo -e "\ncloning ... FMS"
 [[ -d fms ]] && rm -rf fms
 git clone https://github.com/aerorahul/fms -b bugfix/cmake-master
-(cd fms; git checkout 58a6305)
 
 echo -e "\ncloning ... MOM6"
 [[ -d mom6 ]] && rm -rf mom6
 git clone --recursive https://github.com/aerorahul/mom6 -b feature/cmake-master
-(cd mom6; git checkout f1ab18c46)
 
 echo -e "\n"
 echo -e "\nbuild components ..."
@@ -44,23 +42,29 @@ mkdir -p build && cd build
 
 echo -e "\nbuilding ... GSW-Fortran"
 mkdir -p gsw && cd gsw
-cmake -DCMAKE_INSTALL_PREFIX=$prefix/gsw $topDir/src/gsw-fortran
+cmake -DCMAKE_INSTALL_PREFIX=$prefix/gsw \
+      $topDir/src/gsw-fortran
 make -j$NTHREADS VERBOSE=$VERBOSE
 make install
 
 cd $topDir/build
 
 echo -e "\nbuilding ... FMS"
-mkdir -p fms && cd fms
-cmake -DCMAKE_INSTALL_PREFIX=$prefix/fms -D32BIT=OFF -D64BIT=ON $topDir/src/fms
+rm -rf fms && mkdir -p fms && cd fms
+cmake -DCMAKE_INSTALL_PREFIX=$prefix/fms \
+      -D32BIT=OFF -D64BIT=ON \
+      $topDir/src/fms
 make -j$NTHREADS VERBOSE=$VERBOSE
 make install
 
 cd $topDir/build
 
 echo -e "\nbuilding ... MOM6"
-mkdir -p mom6 && cd mom6
-cmake -DCMAKE_PREFIX_PATH=$prefix -DCMAKE_INSTALL_PREFIX=$prefix/mom6 -DMOM6SOLO=ON $topDir/src/mom6
+rm -rf mom6 && mkdir -p mom6 && cd mom6
+cmake -DCMAKE_INSTALL_PREFIX=$prefix/mom6 \
+      -DCMAKE_PREFIX_PATH=$prefix \
+      -DMOM6SOLO=ON \
+      $topDir/src/mom6
 make -j$NTHREADS VERBOSE=$VERBOSE
 make install
 
