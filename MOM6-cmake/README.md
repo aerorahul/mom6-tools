@@ -4,7 +4,8 @@
 
 Usage:
 ```
-module load intel impi netcdf
-cmake -DCMAKE_INSTALL_PREFIX=/path/to/install/mom6/components ..
+rm -rf install
+rm -rf build && mkdir -p build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=../install ..
 make -j6
 ```
