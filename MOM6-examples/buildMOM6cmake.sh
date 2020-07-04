@@ -50,7 +50,7 @@ cd $topDir/build
 
 echo -e "\nbuilding ... FMS"
 mkdir -p fms && cd fms
-cmake -DCMAKE_INSTALL_PREFIX=$prefix/fms $topDir/src/fms
+cmake -DCMAKE_INSTALL_PREFIX=$prefix/fms -D64BIT=ON $topDir/src/fms
 make -j$NTHREADS VERBOSE=$VERBOSE
 make install
 
