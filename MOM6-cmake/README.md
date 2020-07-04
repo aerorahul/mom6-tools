@@ -1,5 +1,5 @@
 # MOM6-cmake
-------------
+
 `CMakeLists.txt` in this directory clones, builds and installs the dependencies of MOM6 and uses them when building MOM6 with cmake.
 
 Usage:
