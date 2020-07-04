@@ -26,10 +26,12 @@ git clone https://github.com/teos-10/gsw-fortran
 echo -e "\ncloning ... FMS"
 [[ -d fms ]] && rm -rf fms
 git clone https://github.com/aerorahul/fms -b bugfix/cmake-master
+(cd fms; git checkout 58a6305)
 
 echo -e "\ncloning ... MOM6"
 [[ -d mom6 ]] && rm -rf mom6
 git clone --recursive https://github.com/aerorahul/mom6 -b feature/cmake-master
+(cd mom6; git checkout f1ab18c46)
 
 echo -e "\n"
 echo -e "\nbuild components ..."
@@ -50,7 +52,7 @@ cd $topDir/build
 
 echo -e "\nbuilding ... FMS"
 mkdir -p fms && cd fms
-cmake -DCMAKE_INSTALL_PREFIX=$prefix/fms -D64BIT=ON $topDir/src/fms
+cmake -DCMAKE_INSTALL_PREFIX=$prefix/fms -D32BIT=OFF -D64BIT=ON $topDir/src/fms
 make -j$NTHREADS VERBOSE=$VERBOSE
 make install
 
