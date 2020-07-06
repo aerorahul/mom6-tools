@@ -1,22 +1,24 @@
-name: Build and Install
+name: Build Linux
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    name: MOM6cmake
+    runs-on: ubuntu-latest
     env:
-      FC: gfortran-9
-      CC: gcc-9
+      CC: gcc-7
+      FC: gfortran-7
+      VERBOSE: 1
 
     steps:
-
-    - name: install-mpi
-      run: |
-        sudo apt-get install libmpich-dev
 
     - name: install-netcdf
       run: |
         sudo apt-get install libnetcdf-dev libnetcdff-dev netcdf-bin pkg-config
+
+    - name: install-mpi
+      run: |
+        sudo apt-get install libmpich-dev
 
     - name: checkout-mom6-tools
       uses: actions/checkout@v2
@@ -26,13 +28,9 @@ jobs:
 
     - name: build-mom6-tools
       run: |
-        cd $GITHUB_WORKSPACE
-        mkdir -p build
+        cd mom6-tools/MOM6-cmake
+        mkdir build
         cd build
-        cmake -DOPENMP=OFF ../MOM6-cmake
-        make -j2
-
-    - name: install-mom6-tools
-      run: |
-        cd $GITHUB_WORKSPACE/build
-        make install
+        export NetCDF_ROOT=$(nc-config --prefix)
+        cmake -DOPENMP=OFF -DCMAKE_INSTALL_PREFIX=../install ..
+        make -j4
