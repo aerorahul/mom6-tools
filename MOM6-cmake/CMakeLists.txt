@@ -36,9 +36,9 @@ ExternalProject_Add(gsw
 
 ExternalProject_Add(fms
   GIT_REPOSITORY "https://github.com/aerorahul/fms"
-  GIT_TAG        "bugfix/cmake-master"
+  GIT_TAG        "bugfix/cmake"
   PREFIX         "${CMAKE_BINARY_DIR}/fms"
-  CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}/libFMS"
+  CMAKE_ARGS     "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}/fms"
                  "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
                  "-DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}"
                  "-DOPENMP=${OPENMP}"
