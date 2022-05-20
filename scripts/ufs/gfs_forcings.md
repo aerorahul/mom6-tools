@@ -1,9 +1,9 @@
 ### Description
 In the tables below, the `column` headers are as follows:
-`column1`: variable names read from the GFS generated surface netCDF file
-`column2`: variable names written out in the forcing file (Fortran code)
-`column3`: mapping from the forcing file variable names to CDEPS variable names (obtained from `datm.streams`)
-`column4`: Additional notes / questions
+- `column1`: variable names read from the GFS generated surface netCDF file
+- `column2`: variable names written out in the forcing file (Fortran code)
+- `column3`: mapping from the forcing file variable names to CDEPS variable names (obtained from `datm.streams`)
+- `column4`: Additional notes / questions
 
 **Questions:**
 1. If CDEPS column has `Null`, does it mean that the variable is not read by CDEPS component?
