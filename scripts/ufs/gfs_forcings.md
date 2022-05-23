@@ -3,12 +3,9 @@ In the tables below, the `column` headers are as follows:
 - `column1`: variable names read from the GFS generated surface flux grib2 file
 - `column2`: variable names read from the GFS generated surface netCDF file
 - `column3`: variable names written out in the forcing file (Fortran code)
-- `column4`: mapping from the forcing file variable names to CDEPS variable names (obtained from `datm.streams`)
-- `column5`: Additional notes / questions
+- `column4`: mapping from the forcing file variable names to CDEPS variable names (obtained from [`datm.streams`](https://github.com/ufs-community/ufs-weather-model/blob/develop/tests/parm/datm.streams.IN)) `Null` implies the variable is not read by the CDEPS component
+- `column5`: Additional notes / questions / comments
 
-**Questions:**
-1. If CDEPS column has `Null`, means that the variable is not read by CDEPS component.
-These variables have no mapping into the CDEPS `datm.streams` file.
 
 ### Coordinates
 |sfluxf000.grib2| sfcf000.nc | forcing.nc | CDEPS | Notes |
@@ -35,7 +32,8 @@ These variables have no mapping into the CDEPS `datm.streams` file.
 | `(tmp2m + 15.)/15.` | `0C > tmp2m > -15C` |
 
 **Questions:**
-1. `precp` and `fprecp` are the liquid and frozen precipitation rates respectively.  GFSv16 `sfcf006.nc` contains a variable `cpofp` as the `Percent frozen precipitation`.  Why not use `cpofp` to derive `precp` and `fprecp` from `prate_ave` instead of the empirical relationship with `tmp2m`?
+- `precp` and `fprecp` are the liquid and frozen precipitation rates respectively.  GFSv16 `sfcf006.nc` contains a variable `cpofp` as the `Percent frozen precipitation`.  Why not use `cpofp` to derive `precp` and `fprecp` from `prate_ave` instead of the empirical relationship with `tmp2m`?
+
 
 ### From sfluxf000.grib2 / sfcf000.nc
 |sfluxf000.grib2| sfcf000.nc | forcing.nc | CDEPS | Notes |
@@ -63,15 +61,18 @@ These variables have no mapping into the CDEPS `datm.streams` file.
 |ICEC@surface    | icec         | icecsfc      | `Null`     | This variable is not read by CDEPS |
 
 **Questions:**
-1. GFSv16 surface netCDF files e.g. `sfcf000.nc` contains the variables `vbdsf_ave`, `vddsf_ave`, `nbdsf_ave`, `nddsf_ave`. Why not use those variables directly instead of scaling them empirically and deriving them from `dswrf`?  What are these scaling factors?
-2. `hgt_hyblev1` is being derived using `delz` at the lowest level from `atmf000.nc`.  `HGT@hybrid_lev1` is available in `sfluxf000.grib2` file.   `hgt_hyblev1` is also available in `sfcf000.nc` file. Why not use it directly instead of using `delz`.  Also, `delz` is thickness, not height. `delz` at the bottom layer is approximately twice of `hgt_hyblev1` as `hgt_hyblev1` is the mid-layer height, while `delz` will yield top-level of the layer.
+- GFSv16 surface netCDF files e.g. `sfcf000.nc` contains the variables `vbdsf_ave`, `vddsf_ave`, `nbdsf_ave`, `nddsf_ave`. Why not use those variables directly instead of scaling them empirically and deriving them from `dswrf`?  What are these scaling factors?
+- `hgt_hyblev1` is being derived using `delz` at the lowest level from `atmf000.nc`.  `HGT@hybrid_lev1` is available in `sfluxf000.grib2` file.   `hgt_hyblev1` is also available in `sfcf000.nc` file. Why not use it directly instead of using `delz` from `atmf000.nc`.  Also, `delz` is thickness, not height. `delz` at the bottom layer (as it is being used for `hgt_hyblev1`) is approximately twice of `hgt_hyblev1` as `hgt_hyblev1` is the mid-layer height, while `delz` will yield top-level of the layer; i.e. `delz =~ 2 * hgt_hyblev1`
 
 ### From atmf000.nc
 || atmf000.nc | forcing.nc | CDEPS | Notes |
 |--|--|--|--|--|
-|| See 1. | pres_hyblev1 | Sa_pbot | Pressure at hybrid level 1 |
-|| delz | hgt_hyblev1  | Sa_z    | Height at hybrid level 1   |
+|| See Q1        | pres_hyblev1 | Sa_pbot | Pressure at hybrid level 1 |
+|| delz (see Q2) | hgt_hyblev1  | Sa_z    | Height at hybrid level 1   |
 
 **Questions:**
 1. `pres_hyblev1` is being calculated as: `pressfc * exp(-g * delz / R * tmp_hyblev1)`.  `delz` is thickness at the value is at the top of the layer.  Is it appropriate to calculate pressure at the mid-layer (`pres_hyblev1`) using `delz` at the top of the layer?  Should the formula be: `pressfc * exp(-g * hgt_hyblev1 / R * tmp_hyblev1)`?
-2. Calculating from `hgt_hyblev1` and using `HGT@hybrid_lev1` from `sfluxf000.grib2` or `hgt_hyblev1` from `sfcf000.nc` will eliminate the need for using `atmf000.nc` completely.
+2. `delz` is being used to represent `hgt_hyblev1`.  `delz =~ 2 * hgt_hyblev1`
+
+**Comments:**
+- Using `HGT@hybrid_lev1` from `sfluxf000.grib2` or `hgt_hyblev1` from `sfcf000.nc` will eliminate the need for using `atmf000.nc` completely.
