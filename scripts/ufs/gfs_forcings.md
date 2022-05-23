@@ -18,11 +18,11 @@ In the tables below, the `column` headers are as follows:
 ### From sfluxf006.grib2 / sfcf006.nc
 |sfluxf006.grib2| sfcf006.nc | forcing.nc | CDEPS | Notes |
 |--|--|--|--|--|
-|UFLX@surface | uflx_ave  | dusfc       | `Null`    | This variable is not read by CDEPS |
-|VFLX@surface | vflx_ave  | dvsfc       | `Null`    | This variable is not read by CDEPS |
-|PRATE@surface| prate_ave | totprcp_ave | `Null`    | This variable is not read by CDEPS |
-|PRATE@surface| prate_ave | precp       | Faxa_rain | `coeff * prate_ave` |
-|PRATE@surface| prate_ave | fprecp      | Faxa_snow | `(1-coeff) * prate_ave` |
+|UFLX@surface | uflx_ave                | dusfc       | `Null`    | This variable is not read by CDEPS |
+|VFLX@surface | vflx_ave                | dvsfc       | `Null`    | This variable is not read by CDEPS |
+|PRATE@surface| prate_ave               | totprcp_ave | `Null`    | This variable is not read by CDEPS |
+|             | `prate_ave * (1-cpofp)` | precp       | Faxa_rain | `coeff * prate_ave` |
+|             | `prate_ave * cpofp`     | fprecp      | Faxa_snow | `(1-coeff) * prate_ave` |
 
 `coeff` calculation based on `tmp2m` in Celcius:
 | `coeff` | tmp2m range |
@@ -32,7 +32,7 @@ In the tables below, the `column` headers are as follows:
 | `(tmp2m + 15.)/15.` | `0C > tmp2m > -15C` |
 
 **Questions:**
-- `precp` and `fprecp` are the liquid and frozen precipitation rates respectively.  GFSv16 `sfcf006.nc` contains a variable `cpofp` as the `Percent frozen precipitation`.  Why not use `cpofp` to derive `precp` and `fprecp` from `prate_ave` instead of the empirical relationship with `tmp2m`?
+- `precp` and `fprecp` are the liquid and frozen precipitation rates respectively.  GFSv16 `sfcf006.nc` contains a variable `cpofp` as the `Percent frozen precipitation`.  Why not use `cpofp` to derive `precp` and `fprecp` from `prate_ave` (as shown above) instead of the empirical relationship with `tmp2m`?
 
 
 ### From sfluxf000.grib2 / sfcf000.nc
@@ -41,10 +41,10 @@ In the tables below, the `column` headers are as follows:
 |ULWRF@surface   | ulwrf        | ULWRF        | `Null`     | This variable is not read by CDEPS |
 |DLWRF@surface   | dlwrf        | DLWRF        | Faxa_lwdn  |
 |DSWRF@surface   | dswrf        | DSWRF        | Faxa_swdn  |
-|DSWRF@surface   | dswrf        | vbdsf_ave    | Faxa_swvdr | `dswrf * 0.285` |
-|DSWRF@surface   | dswrf        | vddsf_ave    | Faxa_swvdf | `dswrf * 0.285` |
-|DSWRF@surface   | dswrf        | nbdsf_ave    | Faxa_swndr | `dswrf * 0.215` |
-|DSWRF@surface   | dswrf        | nddsf_ave    | Faxa_swndf | `dswrf * 0.215` |
+|                | vbdsf_ave    | vbdsf_ave    | Faxa_swvdr | `dswrf * 0.285` |
+|                | vddsf_ave    | vddsf_ave    | Faxa_swvdf | `dswrf * 0.285` |
+|                | nbdsf_ave    | nbdsf_ave    | Faxa_swndr | `dswrf * 0.215` |
+|                | nddsf_ave    | nddsf_ave    | Faxa_swndf | `dswrf * 0.215` |
 |PRES@surface    | pressfc      | psurf        | Sa_pslv    |
 |TMP@2m          | tmp2m        | t2m          | Sa_t2m     |
 |SPFH@2m         | spfh2m       | q2m          | Sa_q2m     |
