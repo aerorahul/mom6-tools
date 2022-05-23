@@ -18,7 +18,7 @@ These variables have no mapping into the CDEPS `datm.streams` file.
 || time | time | `Null` | This variable is not read by CDEPS |
 
 
-### From sfcf006.nc
+### From sfluxf006.grib2 / sfcf006.nc
 |sfluxf006.grib2| sfcf006.nc | forcing.nc | CDEPS | Notes |
 |--|--|--|--|--|
 |UFLX@surface | uflx_ave  | dusfc       | `Null`    | This variable is not read by CDEPS |
@@ -37,7 +37,7 @@ These variables have no mapping into the CDEPS `datm.streams` file.
 **Questions:**
 1. `precp` and `fprecp` are the liquid and frozen precipitation rates respectively.  GFSv16 `sfcf006.nc` contains a variable `cpofp` as the `Percent frozen precipitation`.  Why not use `cpofp` to derive `precp` and `fprecp` from `prate_ave` instead of the empirical relationship with `tmp2m`?
 
-### From sfcf000.nc
+### From sfluxf000.grib2 / sfcf000.nc
 |sfluxf000.grib2| sfcf000.nc | forcing.nc | CDEPS | Notes |
 |--|--|--|--|--|
 |ULWRF@surface   | ulwrf        | ULWRF        | `Null`     | This variable is not read by CDEPS |
