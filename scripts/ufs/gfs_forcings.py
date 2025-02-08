@@ -132,10 +132,10 @@ if __name__ == '__main__':
 
     # Collect precipitation rates from prate_ave
     coeff = get_coeff(dsfcf000['tmp2m'], threshold=-15.)
-    dforcing['precp'] = coeff * dsfcf006['prate_ave']
+    dforcing['precp'] = coeff * dsfcf006['prate_ave'].squeeze()
     dforcing['precp'].attrs = dsfcf006['prate_ave'].attrs
     dforcing['precp'].attrs['long_name'] = 'surface rain precipitation rate'
-    dforcing['fprecp'] = (1.0 - coeff) * dsfcf006['prate_ave']
+    dforcing['fprecp'] = (1.0 - coeff) * dsfcf006['prate_ave'].squeeze()
     dforcing['fprecp'].attrs = dsfcf006['prate_ave'].attrs
     dforcing['fprecp'].attrs['long_name'] = 'surface snow precipitation rate'
 
