@@ -1,5 +1,5 @@
 ### Data-atmosphere forcings for UFS-weather-model.
-The python script [`gfs_forcings.py`](./ufs/gfs_forcings.py) is the main driver for generating the data atmosphere forcings for the ufs-weather-model (UFSWM) utilizing the CDEPS component.
+The python script [`gfs_forcings.py`](./gfs_forcings.py) is the main driver for generating the data atmosphere forcings for the ufs-weather-model (UFSWM) utilizing the CDEPS component.
 The input files for `gfs_forcings.py` are:
 - `sfcf000.nc` - This is the surface file produced by the UFSWM at hour 0 of the forecast (at analysis time)
 - `sfcf006.nc` - This is the surface file produced by the UFSWM at hour 6 of the forecast initialized at the previous (-6H) analysis time.
@@ -23,4 +23,4 @@ optional arguments:
   --debug            print debugging statements (default: False)
   ```
   
-  The variables being mapped from `SFCF000` and `SFCF006` into `FORCING` are described in [`gfs_forcings.md`](./ufs/gfs_forcings.md)
+  The variables being mapped from `SFCF000` and `SFCF006` into `FORCING` are described in [`gfs_forcings.md`](./gfs_forcings.md)
