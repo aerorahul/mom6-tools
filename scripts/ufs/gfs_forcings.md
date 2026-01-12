@@ -34,6 +34,16 @@ In the tables below, the `column` headers are as follows:
 **Questions:**
 - `precp` and `fprecp` are the liquid and frozen precipitation rates respectively.  GFSv16 `sfcf006.nc` contains a variable `cpofp` as the `Percent frozen precipitation`.  Why not use `cpofp` to derive `precp` and `fprecp` from `prate_ave` (as shown above) instead of the empirical relationship with `tmp2m`?
 
+**Answers:**
+Agreed. The empirical temperature-based relationship is a legacy workaround. 
+Record 41 (CPOFP) is available in the sflux GRIB2 files, extract it directly. 
+Calculate and split using the GFS-native frozen precipitation fraction:
+
+- Faxa_rain = PRATE * (1 - CPOFP/100)
+- Faxa_snow = PRATE * (CPOFP/100)
+
+This ensures the forcing reflects the GFS physics exactly, rather than an external estimation.
+
 
 ### From sfluxf000.grib2 / sfcf000.nc
 |sfluxf000.grib2| sfcf000.nc | forcing.nc | CDEPS | Notes |
@@ -64,6 +74,11 @@ In the tables below, the `column` headers are as follows:
 - GFSv16 surface netCDF files e.g. `sfcf000.nc` contains the variables `vbdsf_ave`, `vddsf_ave`, `nbdsf_ave`, `nddsf_ave`. Why not use those variables directly instead of scaling them empirically and deriving them from `dswrf`?  What are these scaling factors?
 - `hgt_hyblev1` is being derived using `delz` at the lowest level from `atmf000.nc`.  `HGT@hybrid_lev1` is available in `sfluxf000.grib2` file.   `hgt_hyblev1` is also available in `sfcf000.nc` file. Why not use it directly instead of using `delz` from `atmf000.nc`.  Also, `delz` is thickness, not height. `delz` at the bottom layer (as it is being used for `hgt_hyblev1`) is approximately twice of `hgt_hyblev1` as `hgt_hyblev1` is the mid-layer height, while `delz` will yield top-level of the layer; i.e. `delz =~ 2 * hgt_hyblev1`
 
+**Answers:**
+There is no longer a need for empirical scaling (e.g., 0.285). 
+Identy records 128–131 in the GRIB2 inventory contain the native VBDSF, VDDSF, NBDSF, and NDDSF surface fluxes.
+Pull these directly to satisfy the datm.streams requirements for Faxa_swvdr, Faxa_swvdf, Faxa_swndr, and Faxa_swndf.
+
 ### From atmf000.nc
 || atmf000.nc | forcing.nc | CDEPS | Notes |
 |--|--|--|--|--|
@@ -76,3 +91,8 @@ In the tables below, the `column` headers are as follows:
 
 **Comments:**
 - Using `HGT@hybrid_lev1` from `sfluxf000.grib2` or `hgt_hyblev1` from `sfcf000.nc` will eliminate the need for using `atmf000.nc` completely.
+
+**Answers:**
+Complete agreement! Move away from the atmf000.nc dependency. 
+By using Record 1 (HGT:1 hybrid level) from the sflux GRIB2 file, we obtain the mid-layer height directly.
+This resolves the height/thickness ambiguity and eliminates the risk of the delz =~ 2 * hgt_hyblev1 approximation error.
